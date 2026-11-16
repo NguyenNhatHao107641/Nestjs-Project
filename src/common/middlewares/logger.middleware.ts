@@ -1,0 +1,29 @@
+import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
+
+/**
+ * Bài 08: Middleware Global - Routing trong NestJS
+ * Ghi lại log mọi request tới API: Method, Url, IP, Status code và Execution time
+ */
+@Injectable()
+export class LoggerMiddleware implements NestMiddleware {
+  private readonly logger = new Logger('HTTP');
+
+  use(req: Request, res: Response, next: NextFunction): void {
+    const { method, originalUrl, ip } = req;
+    const userAgent = req.get('user-agent') || '';
+    const startTime = Date.now();
+
+    res.on('finish', () => {
+      const { statusCode } = res;
+      const contentLength = res.get('content-length') || 0;
+      const duration = Date.now() - startTime;
+
+      this.logger.log(
+        `[${method}] ${originalUrl} ${statusCode} ${contentLength}b - ${duration}ms | IP: ${ip} | UA: ${userAgent}`,
+      );
+    });
+
+    next();
+  }
+}
