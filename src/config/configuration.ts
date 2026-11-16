@@ -2,7 +2,10 @@ export default () => ({
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   database: {
-    uri: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/homestay_booking',
+    uri:
+      process.env.MONGODB_URI ||
+      process.env.MONGO_URI ||
+      'mongodb://127.0.0.1:27017/homestay_booking',
   },
   jwt: {
     secret: process.env.JWT_SECRET || 'default_jwt_secret_key_nest_2026',

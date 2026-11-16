@@ -4,7 +4,9 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const mongoUri =
-  process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/homestay_booking';
+  process.env.MONGODB_URI ||
+  process.env.MONGO_URI ||
+  'mongodb://127.0.0.1:27017/homestay_booking';
 
 async function seed() {
   console.log('🔄 Đang kết nối MongoDB tại:', mongoUri);
