@@ -1,17 +1,11 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -28,6 +22,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  // Chống spam tạo tài khoản: tối đa 5 lần đăng ký / phút / IP
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Đăng ký tài khoản mới (Khách hàng hoặc Chủ homestay)' })
   @ApiResponse({ status: 201, description: 'Đăng ký thành công' })
   register(@Body() registerDto: RegisterDto) {
@@ -35,6 +31,8 @@ export class AuthController {
   }
 
   @Post('login')
+  // Chống dò mật khẩu (brute force): tối đa 10 lần đăng nhập / phút / IP
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng nhập hệ thống để nhận Access Token và Refresh Token' })
   @ApiResponse({ status: 200, description: 'Đăng nhập thành công' })
@@ -43,6 +41,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cấp lại Access Token mới khi token cũ hết hạn (Bài 10)' })
   @ApiResponse({ status: 200, description: 'Cấp lại token thành công' })

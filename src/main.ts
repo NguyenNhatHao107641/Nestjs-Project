@@ -1,16 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { join } from 'node:path';
 import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Bật CORS cho phép các ứng dụng Frontend kết nối
   app.enableCors();
+
+  // Bài 14: Phục vụ Frontend tĩnh (thư mục public/) — "/" trả về trang chủ StayNest
+  // express.static chạy trước router của Nest: file tồn tại → trả file, không tìm thấy → next() tới REST API
+  app.useStaticAssets(join(process.cwd(), 'public'), { index: 'index.html' });
 
   // Bài 07: ValidationPipe toàn cục - kiểm tra DTO tự động
   app.useGlobalPipes(
@@ -50,6 +56,7 @@ async function bootstrap() {
     .addTag('Rooms - Quản lý phòng & Homestay')
     .addTag('Bookings - Đặt phòng & Quản lý đơn')
     .addTag('Reviews - Đánh giá phòng')
+    .addTag('Favorites - Phòng yêu thích')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -58,7 +65,8 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  logger.log(`🚀 Ứng dụng NestJS đang chạy tại: http://localhost:${port}`);
+  logger.log(`🏠 Trang chủ Homestay: http://localhost:${port}/`);
+  logger.log(`🚀 REST API: http://localhost:${port}/api`);
   logger.log(`📖 Tài liệu Swagger API Docs: http://localhost:${port}/api/docs`);
   logger.log(`🔮 GraphQL Playground: http://localhost:${port}/graphql`);
 }

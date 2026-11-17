@@ -6,6 +6,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Room, RoomDocument, RoomStatus } from '../../entities/room.entity.js';
+import { Booking, BookingDocument, BookingStatus } from '../../entities/booking.entity.js';
 import { UserRole } from '../../entities/user.entity.js';
 import { CreateRoomDto } from './dto/create-room.dto.js';
 import { UpdateRoomDto } from './dto/update-room.dto.js';
@@ -19,6 +20,8 @@ export class RoomsService {
   constructor(
     @InjectModel(Room.name)
     private readonly roomModel: Model<RoomDocument>,
+    @InjectModel(Booking.name)
+    private readonly bookingModel: Model<BookingDocument>,
   ) {}
 
   async create(
@@ -99,9 +102,11 @@ export class RoomsService {
   ): Promise<RoomDocument> {
     const room = await this.findById(id);
 
+    // Lưu ý: findById đã populate hostId thành object user → phải lấy _id để so sánh
+    const roomHostId = (room.hostId as { _id?: unknown })?._id ?? room.hostId;
     if (
       userRole !== UserRole.ADMIN &&
-      room.hostId.toString() !== userId.toString()
+      roomHostId.toString() !== userId.toString()
     ) {
       throw new ForbiddenException('Bạn không có quyền chỉnh sửa phòng này');
     }
@@ -123,9 +128,11 @@ export class RoomsService {
   ): Promise<{ message: string }> {
     const room = await this.findById(id);
 
+    // Lưu ý: findById đã populate hostId thành object user → phải lấy _id để so sánh
+    const roomHostId = (room.hostId as { _id?: unknown })?._id ?? room.hostId;
     if (
       userRole !== UserRole.ADMIN &&
-      room.hostId.toString() !== userId.toString()
+      roomHostId.toString() !== userId.toString()
     ) {
       throw new ForbiddenException('Bạn không có quyền xóa phòng này');
     }
@@ -142,5 +149,34 @@ export class RoomsService {
     await this.roomModel
       .findByIdAndUpdate(roomId, { rating, totalReviews })
       .exec();
+  }
+
+  /**
+   * Lịch khả dụng của phòng: các khoảng ngày đã có khách đặt (pending/confirmed)
+   * từ hôm nay trở đi — frontend dùng để chặn ngày trùng & hiển thị lịch
+   */
+  async findAvailability(
+    roomId: Types.ObjectId | string,
+  ): Promise<{ roomId: string; bookedRanges: Array<{ checkInDate: Date; checkOutDate: Date; status: string }> }> {
+    await this.findById(roomId); // 404 nếu phòng không tồn tại
+
+    const bookings = await this.bookingModel
+      .find({
+        roomId: new Types.ObjectId(roomId),
+        status: { $in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
+        checkOutDate: { $gt: new Date() },
+      })
+      .select('checkInDate checkOutDate status')
+      .sort({ checkInDate: 1 })
+      .exec();
+
+    return {
+      roomId: String(roomId),
+      bookedRanges: bookings.map((b) => ({
+        checkInDate: b.checkInDate,
+        checkOutDate: b.checkOutDate,
+        status: b.status,
+      })),
+    };
   }
 }

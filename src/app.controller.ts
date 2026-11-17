@@ -2,8 +2,12 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service.js';
 
+/**
+ * Endpoint thông tin hệ thống được chuyển sang "/api"
+ * để nhường "/" cho trang chủ Frontend (thư mục public/)
+ */
 @ApiTags('Root - Hệ thống')
-@Controller()
+@Controller('api')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 

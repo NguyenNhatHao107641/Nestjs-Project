@@ -149,7 +149,10 @@ export class BookingsService {
     const booking = await this.findById(id);
     const room = await this.roomModel.findById(booking.roomId).exec();
 
-    const isCustomer = booking.customerId.toString() === userId.toString();
+    // Lưu ý: findById đã populate customerId thành object user → phải lấy _id để so sánh
+    const bookingCustomerId =
+      (booking.customerId as { _id?: unknown })?._id ?? booking.customerId;
+    const isCustomer = bookingCustomerId.toString() === userId.toString();
     const isHost = room && room.hostId.toString() === userId.toString();
     const isAdmin = userRole === UserRole.ADMIN;
 

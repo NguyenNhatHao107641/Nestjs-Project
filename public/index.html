@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StayNest — Tìm kiếm & Đặt phòng Homestay</title>
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230D9488'/%3E%3Cpath d='M5 12l7-6 7 6M7.5 11v7h3.5v-4h2v4h3.5v-7' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              teal: '#0D9488',
+              'teal-dark': '#0F766E',
+              'teal-soft': '#F0FDFA',
+              rose: '#F43F5E',
+              'rose-soft': '#FFF1F2',
+            },
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            'soft': '0 4px 24px -6px rgba(15, 23, 42, 0.08)',
+            'lift': '0 20px 40px -12px rgba(15, 23, 42, 0.16)',
+            'bar': '0 12px 40px -8px rgba(15, 23, 42, 0.18)',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    .thin-scroll::-webkit-scrollbar { width: 6px; }
+    .thin-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 999px; }
+    .card-img { transition: transform .2s ease; }
+    .group:hover .card-img { transform: scale(1.06); }
+    body.modal-open { overflow: hidden; }
+    .modal-panel { transition: opacity .2s ease, transform .2s ease; }
+    .modal-hidden { opacity: 0; pointer-events: none; }
+    .modal-hidden .modal-panel { transform: translateY(16px) scale(.98); }
+    .skeleton { animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+  </style>
+</head>
+
+<body class="bg-slate-50 font-sans text-slate-800 antialiased">
+
+  <!-- Header được vẽ bởi ui.js theo vai trò người dùng -->
+  <div id="appHeader" class="sticky top-0 z-40 w-full border-b border-slate-100 bg-white/85 backdrop-blur-md"></div>
+
+  <!-- ══════════════════════ HERO ══════════════════════ -->
+  <section class="relative overflow-hidden">
+    <div class="absolute inset-0">
+      <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1920&h=1080&q=80"
+        alt="Biệt thự nghỉ dưỡng" class="h-full w-full object-cover" />
+      <div class="absolute inset-0 bg-gradient-to-b from-white/70 via-white/40 to-slate-50"></div>
+    </div>
+
+    <div class="relative mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 sm:pt-24 lg:px-8">
+      <div class="max-w-2xl">
+        <span class="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-brand-teal shadow-soft backdrop-blur">
+          <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 1l2.6 5.3 5.9.9-4.3 4.1 1 5.8L10 14.4l-5.2 2.7 1-5.8L1.5 7.2l5.9-.9L10 1z"/></svg>
+          Homestay đã được xác minh trên hệ thống
+        </span>
+        <h1 class="mt-6 text-4xl font-extrabold leading-[1.15] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.4rem]">
+          Tìm nơi nghỉ chân<br />
+          <span class="text-brand-teal">đúng nghĩa "ngôi nhà thứ hai"</span>
+        </h1>
+        <p id="heroSub" class="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+          Đặt phòng homestay, villa & bungalow trên toàn Việt Nam. Xác nhận tức thì, miễn phí hủy trong 24 giờ.
+        </p>
+        <!-- Nút theo vai trò: guest → Trở thành chủ nhà; host/admin → Đăng phòng -->
+        <div id="heroRoleCta" class="mt-6 flex gap-3"></div>
+      </div>
+
+      <!-- ── Floating Search Bar ── -->
+      <div class="mt-10 sm:mt-12">
+        <form id="searchForm" class="rounded-3xl bg-white p-2 shadow-bar ring-1 ring-slate-900/5">
+          <div class="grid grid-cols-1 gap-2 md:grid-cols-[1.4fr_1fr_1fr_0.9fr_auto] md:items-center">
+
+            <label class="flex cursor-pointer items-center gap-3 rounded-2xl px-5 py-3.5 transition-all duration-200 hover:bg-slate-50 md:border-r md:border-slate-200">
+              <svg class="h-5 w-5 shrink-0 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span class="min-w-0 flex-1">
+                <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Địa điểm</span>
+                <input id="searchLocation" type="text" placeholder="Bạn muốn đi đâu?"
+                  class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-400" />
+              </span>
+            </label>
+
+            <label class="flex cursor-pointer items-center gap-3 rounded-2xl px-5 py-3.5 transition-all duration-200 hover:bg-slate-50 md:border-r md:border-slate-200">
+              <svg class="h-5 w-5 shrink-0 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <span class="min-w-0 flex-1">
+                <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Ngày nhận phòng</span>
+                <input id="searchCheckIn" type="date" class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none" />
+              </span>
+            </label>
+
+            <label class="flex cursor-pointer items-center gap-3 rounded-2xl px-5 py-3.5 transition-all duration-200 hover:bg-slate-50 md:border-r md:border-slate-200">
+              <svg class="h-5 w-5 shrink-0 text-brand-rose" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <span class="min-w-0 flex-1">
+                <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Ngày trả phòng</span>
+                <input id="searchCheckOut" type="date" class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none" />
+              </span>
+            </label>
+
+            <label class="flex cursor-pointer items-center gap-3 rounded-2xl px-5 py-3.5 transition-all duration-200 hover:bg-slate-50">
+              <svg class="h-5 w-5 shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm6 0v-1a6 6 0 00-4-5.65M13 4a4 4 0 100 5.292"/>
+              </svg>
+              <span class="min-w-0 flex-1">
+                <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Số khách</span>
+                <select id="searchGuests" class="w-full cursor-pointer bg-transparent text-sm font-semibold text-slate-800 outline-none">
+                  <option value="1">1 khách</option>
+                  <option value="2" selected>2 khách</option>
+                  <option value="3">3 khách</option>
+                  <option value="4">4 khách</option>
+                  <option value="5">5+ khách</option>
+                </select>
+              </span>
+            </label>
+
+            <button type="submit"
+              class="flex items-center justify-center gap-2 rounded-2xl bg-brand-teal px-7 py-4 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-teal-dark hover:shadow-lift active:translate-y-0 md:ml-2 md:py-[1.65rem]">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+              </svg>
+              <span class="hidden md:inline">Tìm phòng</span>
+            </button>
+          </div>
+
+          <!-- Bộ lọc mở rộng: giá + từ khóa -->
+          <details class="mt-2 rounded-2xl bg-slate-50/80 px-2" id="filterDetails">
+            <summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-xs font-bold text-slate-500 transition-colors duration-200 hover:text-brand-teal">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+              Bộ lọc nâng cao (khoảng giá, từ khóa)
+            </summary>
+            <div class="grid gap-3 px-3 pb-3 pt-1 sm:grid-cols-3">
+              <label class="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5">
+                <span class="text-xs font-bold text-slate-400">Giá từ</span>
+                <input id="fMinPrice" type="number" min="0" placeholder="0"
+                  class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-300" />
+              </label>
+              <label class="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5">
+                <span class="text-xs font-bold text-slate-400">đến</span>
+                <input id="fMaxPrice" type="number" min="0" placeholder="5.000.000"
+                  class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-300" />
+              </label>
+              <label class="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5">
+                <span class="text-xs font-bold text-slate-400">Từ khóa</span>
+                <input id="fKeyword" type="text" placeholder="view hồ, lửa trại…"
+                  class="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-300" />
+              </label>
+            </div>
+          </details>
+        </form>
+
+        <div class="mt-4 flex flex-wrap items-center gap-2 px-1">
+          <span class="text-xs font-semibold text-slate-500">Gợi ý:</span>
+          <button type="button" class="suggestion rounded-full border border-slate-200 bg-white/80 px-4 py-1.5 text-xs font-semibold text-slate-700 backdrop-blur transition-all duration-200 hover:border-brand-teal hover:bg-brand-teal-soft hover:text-brand-teal">🌊 Đà Lạt</button>
+          <button type="button" class="suggestion rounded-full border border-slate-200 bg-white/80 px-4 py-1.5 text-xs font-semibold text-slate-700 backdrop-blur transition-all duration-200 hover:border-brand-teal hover:bg-brand-teal-soft hover:text-brand-teal">🏖️ Nha Trang</button>
+          <button type="button" class="suggestion rounded-full border border-slate-200 bg-white/80 px-4 py-1.5 text-xs font-semibold text-slate-700 backdrop-blur transition-all duration-200 hover:border-brand-teal hover:bg-brand-teal-soft hover:text-brand-teal">⛰️ Sa Pa</button>
+          <button type="button" class="suggestion rounded-full border border-slate-200 bg-white/80 px-4 py-1.5 text-xs font-semibold text-slate-700 backdrop-blur transition-all duration-200 hover:border-brand-teal hover:bg-brand-teal-soft hover:text-brand-teal">🏝️ Phú Quốc</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ DANH MỤC ══════════════════════ -->
+  <section class="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+    <div id="categoryBar" class="flex gap-3 overflow-x-auto pb-2 thin-scroll">
+      <button type="button" class="category shrink-0 rounded-full bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white shadow-soft transition-all duration-200 hover:-translate-y-0.5" data-room-type="">Tất cả</button>
+      <button type="button" class="category shrink-0 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:ring-brand-teal hover:text-brand-teal" data-room-type="entire_homestay">🏠 Homestay nguyên căn</button>
+      <button type="button" class="category shrink-0 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:ring-brand-teal hover:text-brand-teal" data-room-type="villa">🌴 Villa</button>
+      <button type="button" class="category shrink-0 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:ring-brand-teal hover:text-brand-teal" data-room-type="suite">✨ Suite</button>
+      <button type="button" class="category shrink-0 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:ring-brand-teal hover:text-brand-teal" data-room-type="deluxe">Deluxe</button>
+      <button type="button" class="category shrink-0 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:ring-brand-teal hover:text-brand-teal" data-room-type="standard">🛏️ Phòng tiêu chuẩn</button>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ GRID DANH SÁCH ══════════════════════ -->
+  <section class="mx-auto max-w-7xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
+    <div class="mb-8 flex items-end justify-between">
+      <div>
+        <h2 class="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Điểm đến được yêu thích nhất</h2>
+        <p id="resultCount" class="mt-2 text-sm text-slate-500 sm:text-base">Đang tải homestay từ hệ thống…</p>
+      </div>
+    </div>
+
+    <div id="cardGrid" class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+
+    <div id="gridState" class="hidden py-16 text-center">
+      <span id="stateIcon" class="mx-auto grid h-16 w-16 place-items-center rounded-full bg-slate-100">
+        <svg class="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+      </span>
+      <h3 id="stateTitle" class="mt-5 text-xl font-extrabold text-slate-900"></h3>
+      <p id="stateMessage" class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500"></p>
+      <button id="stateRetry" class="mt-6 hidden rounded-xl bg-brand-teal px-8 py-3 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-teal-dark hover:shadow-lift">Tải lại</button>
+    </div>
+  </section>
+
+  <!-- ══════════════════════ FOOTER ══════════════════════ -->
+  <footer class="border-t border-slate-100 bg-white">
+    <div class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <a href="index.html" class="flex items-center gap-2.5">
+            <span class="grid h-9 w-9 place-items-center rounded-xl bg-brand-teal text-white">
+              <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>
+            </span>
+            <span class="text-lg font-extrabold text-slate-900">Stay<span class="text-brand-teal">Nest</span></span>
+          </a>
+          <p class="mt-4 max-w-xs text-sm leading-relaxed text-slate-500">
+            Nền tảng đặt phòng homestay hàng đầu Việt Nam — kết nối bạn với những không gian lưu trú đáng yêu nhất.
+          </p>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-slate-900">Khám phá</h4>
+          <ul class="mt-4 space-y-3 text-sm text-slate-500">
+            <li><a href="#" class="suggestion transition-colors duration-200 hover:text-brand-teal" data-city="Đà Lạt">Homestay ở Đà Lạt</a></li>
+            <li><a href="#" class="suggestion transition-colors duration-200 hover:text-brand-teal" data-city="Nha Trang">Homestay ở Nha Trang</a></li>
+            <li><a href="#" class="suggestion transition-colors duration-200 hover:text-brand-teal" data-city="Hà Nội">Homestay ở Hà Nội</a></li>
+            <li><a href="#" class="suggestion transition-colors duration-200 hover:text-brand-teal" data-city="Phú Quốc">Homestay ở Phú Quốc</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-slate-900">Tài nguyên</h4>
+          <ul class="mt-4 space-y-3 text-sm text-slate-500">
+            <li><a href="/api/docs" target="_blank" class="transition-colors duration-200 hover:text-brand-teal">Tài liệu Swagger API</a></li>
+            <li><a href="/graphql" target="_blank" class="transition-colors duration-200 hover:text-brand-teal">GraphQL Playground</a></li>
+            <li><a href="/api" target="_blank" class="transition-colors duration-200 hover:text-brand-teal">Trạng thái hệ thống</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-slate-900">Chủ nhà</h4>
+          <ul class="mt-4 space-y-3 text-sm text-slate-500">
+            <li><a href="auth.html?mode=register" class="transition-colors duration-200 hover:text-brand-teal">Đăng cho thuê phòng</a></li>
+            <li><a href="host.html" class="transition-colors duration-200 hover:text-brand-teal">Dashboard chủ nhà</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-12 flex flex-col items-center justify-between gap-4 border-t border-slate-100 pt-8 text-xs text-slate-400 sm:flex-row">
+        <p>© 2026 StayNest Vietnam. Bảo lưu mọi quyền.</p>
+        <div class="flex gap-6 font-medium">
+          <a href="#" class="transition-colors duration-200 hover:text-slate-700">Điều khoản</a>
+          <a href="#" class="transition-colors duration-200 hover:text-slate-700">Quyền riêng tư</a>
+          <a href="#" class="transition-colors duration-200 hover:text-slate-700">Cookie</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ══════════════════════ MODAL ĐẶT NHANH ══════════════════════ -->
+  <div id="bookingModal" class="modal-hidden fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-labelledby="bookingTitle">
+    <div id="modalBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"></div>
+
+    <div class="modal-panel relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-lift sm:max-h-[90vh] sm:rounded-3xl">
+      <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+        <h2 id="bookingTitle" class="text-lg font-extrabold text-slate-900">Đặt nhanh — <span id="modalRoomName" class="text-brand-teal"></span></h2>
+        <button id="modalClose" class="grid h-9 w-9 place-items-center rounded-full text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700" aria-label="Đóng">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="thin-scroll flex-1 overflow-y-auto px-6 py-6">
+        <div class="flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
+          <img id="summaryRoomImg" class="h-16 w-20 rounded-xl object-cover bg-slate-200" alt="Ảnh phòng" />
+          <div class="min-w-0 flex-1">
+            <p id="summaryRoomName" class="truncate text-sm font-bold text-slate-900"></p>
+            <p id="summaryRoomMeta" class="mt-0.5 text-xs text-slate-500"></p>
+            <p class="mt-1 text-sm font-extrabold text-slate-900"><span id="summaryRoomPrice"></span> <span class="text-xs font-semibold text-slate-400">/ đêm</span></p>
+          </div>
+        </div>
+
+        <div id="serverError" class="mt-5 hidden rounded-xl border border-brand-rose/30 bg-brand-rose-soft px-4 py-3 text-sm font-semibold text-brand-rose"></div>
+
+        <form id="bookingForm" class="mt-6 space-y-5" novalidate>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="fCheckIn" class="mb-1.5 block text-sm font-bold text-slate-700">Ngày nhận phòng <span class="text-brand-rose">*</span></label>
+              <input id="fCheckIn" name="checkIn" type="date"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition-all duration-200 focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20" />
+              <p class="error hidden mt-1.5 text-xs font-semibold text-brand-rose"></p>
+            </div>
+            <div>
+              <label for="fCheckOut" class="mb-1.5 block text-sm font-bold text-slate-700">Ngày trả phòng <span class="text-brand-rose">*</span></label>
+              <input id="fCheckOut" name="checkOut" type="date"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition-all duration-200 focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20" />
+              <p class="error hidden mt-1.5 text-xs font-semibold text-brand-rose"></p>
+            </div>
+          </div>
+
+          <div>
+            <span class="mb-1.5 block text-sm font-bold text-slate-700">Số khách <span id="capacityHint" class="font-medium text-slate-400"></span></span>
+            <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+              <span id="guestLabel" class="text-sm font-semibold text-slate-800">2 khách</span>
+              <div class="flex items-center gap-3">
+                <button type="button" id="guestMinus" class="grid h-8 w-8 place-items-center rounded-full text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:ring-brand-teal hover:text-brand-teal disabled:opacity-30" aria-label="Giảm số khách">−</button>
+                <span id="guestValue" class="w-4 text-center text-sm font-extrabold text-slate-900">2</span>
+                <button type="button" id="guestPlus" class="grid h-8 w-8 place-items-center rounded-full text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:ring-brand-teal hover:text-brand-teal disabled:opacity-30" aria-label="Tăng số khách">+</button>
+              </div>
+            </div>
+            <p class="error hidden mt-1.5 text-xs font-semibold text-brand-rose"></p>
+          </div>
+
+          <div class="space-y-2 rounded-2xl bg-brand-teal-soft px-5 py-4 text-sm">
+            <div class="flex justify-between text-slate-600">
+              <span id="priceNights">1 đêm</span>
+              <span id="priceSubtotal">0₫</span>
+            </div>
+            <div class="flex justify-between border-t border-brand-teal/15 pt-2.5 text-base font-extrabold text-slate-900">
+              <span>Tổng cộng</span>
+              <span id="priceTotal" class="text-brand-teal">0₫</span>
+            </div>
+          </div>
+
+          <button id="submitBookingBtn" type="submit"
+            class="w-full rounded-xl bg-brand-rose py-4 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:bg-rose-600 hover:shadow-lift active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
+            Xác nhận đặt phòng
+          </button>
+          <p id="bookingHint" class="text-center text-xs text-slate-400">Đơn ở trạng thái "Chờ xác nhận" — chủ nhà sẽ phản hồi trong 24 giờ.</p>
+        </form>
+
+        <div id="loginBlock" class="mt-6 hidden rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <h3 class="text-sm font-extrabold text-slate-900">Bạn cần đăng nhập để đặt phòng</h3>
+          <p class="mt-1 text-xs text-slate-500">Tài khoản demo: <code class="rounded bg-slate-200 px-1.5 py-0.5 font-semibold">customer@homestay.com</code> / <code class="rounded bg-slate-200 px-1.5 py-0.5 font-semibold">123456</code></p>
+          <div class="mt-4 space-y-3">
+            <input id="loginEmail" type="email" placeholder="Email" autocomplete="username"
+              class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20" />
+            <input id="loginPassword" type="password" placeholder="Mật khẩu" autocomplete="current-password"
+              class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20" />
+            <p id="loginError" class="hidden text-xs font-semibold text-brand-rose"></p>
+            <button id="loginSubmit" type="button"
+              class="w-full rounded-xl bg-brand-teal py-3 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-teal-dark hover:shadow-lift disabled:opacity-60">
+              Đăng nhập & tiếp tục đặt phòng
+            </button>
+            <a href="auth.html?mode=register" class="block text-center text-xs font-bold text-brand-teal transition-colors duration-200 hover:underline">Chưa có tài khoản? Đăng ký ngay</a>
+          </div>
+        </div>
+
+        <div id="successView" class="hidden py-8 text-center">
+          <span class="mx-auto grid h-16 w-16 place-items-center rounded-full bg-brand-teal-soft">
+            <svg class="h-8 w-8 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          </span>
+          <h3 class="mt-5 text-xl font-extrabold text-slate-900">Đặt phòng thành công! 🎉</h3>
+          <div class="mx-auto mt-4 max-w-sm rounded-2xl bg-slate-50 p-4 text-left text-sm text-slate-600">
+            <p>Mã đơn: <span id="successBookingId" class="font-bold text-slate-900"></span></p>
+            <p class="mt-1.5">Phòng: <span id="successRoom" class="font-bold text-slate-900"></span></p>
+            <p id="successDates" class="mt-1.5"></p>
+            <p class="mt-1.5">Tổng tiền: <span id="successTotal" class="font-extrabold text-brand-teal"></span></p>
+          </div>
+          <a href="my-bookings.html" class="mt-6 inline-block rounded-xl bg-brand-teal px-8 py-3 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-teal-dark hover:shadow-lift">Xem đơn của tôi</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/api.js"></script>
+  <script src="assets/auth.js"></script>
+  <script src="assets/ui.js"></script>
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => [...document.querySelectorAll(s)];
+
+    // Ngày mặc định
+    const today = new Date();
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    const iso = (d) => d.toISOString().split('T')[0];
+    ['#searchCheckIn', '#fCheckIn'].forEach(s => { $(s).min = iso(today); $(s).value = iso(today); });
+    ['#searchCheckOut', '#fCheckOut'].forEach(s => { $(s).min = iso(tomorrow); $(s).value = iso(tomorrow); });
+
+    const state = {
+      rooms: [],
+      filter: { city: '', roomType: '', guests: '', minPrice: '', maxPrice: '', keyword: '' },
+      currentRoom: null,
+      guests: { min: 1, max: 10, value: 2 },
+      bookingInFlight: false,
+    };
+
+    // ═══════════ Tải phòng từ API ═══════════
+    async function loadRooms() {
+      const grid = $('#cardGrid'), stateBox = $('#gridState');
+      grid.classList.remove('hidden');
+      stateBox.classList.add('hidden');
+      $('#resultCount').textContent = 'Đang tải homestay từ hệ thống…';
+
+      grid.innerHTML = Array.from({ length: 8 }, () => `
+        <div class="skeleton">
+          <div class="aspect-[4/3] rounded-2xl bg-slate-200"></div>
+          <div class="px-1 pt-4">
+            <div class="h-4 w-3/4 rounded bg-slate-200"></div>
+            <div class="mt-2 h-3 w-1/2 rounded bg-slate-200"></div>
+            <div class="mt-3 h-4 w-1/3 rounded bg-slate-200"></div>
+          </div>
+        </div>`).join('');
+
+      const params = new URLSearchParams();
+      if (state.filter.city) params.set('city', state.filter.city);
+      if (state.filter.roomType) params.set('roomType', state.filter.roomType);
+      if (state.filter.guests) params.set('guests', state.filter.guests);
+      if (state.filter.minPrice) params.set('minPrice', state.filter.minPrice);
+      if (state.filter.maxPrice) params.set('maxPrice', state.filter.maxPrice);
+      if (state.filter.keyword) params.set('keyword', state.filter.keyword);
+
+      try {
+        const res = await API.get('/rooms?' + params.toString(), { auth: false });
+        state.rooms = res.data || [];
+        renderRooms();
+        if (state.rooms.length === 0) {
+          showGridState('Không tìm thấy homestay phù hợp',
+            'Thử đổi địa điểm, giá hoặc lọc rộng hơn. Nếu hệ thống chưa có dữ liệu, hãy chạy <code class="rounded bg-slate-200 px-1.5 py-0.5 font-semibold">npm run seed</code>.', false);
+        } else {
+          const f = state.filter;
+          $('#resultCount').textContent =
+            `Hiển thị ${state.rooms.length} homestay` +
+            (f.city ? ` tại ${f.city}` : '') +
+            ((f.minPrice || f.maxPrice) ? ' · theo khoảng giá' : '') +
+            ' · dữ liệu trực tiếp từ MongoDB';
+        }
+      } catch (err) {
+        grid.innerHTML = '';
+        showGridState('Không thể tải danh sách phòng',
+          UI.esc(API.serverMessage(err)) + ' — hãy chắc chắn MongoDB đang chạy và API đã khởi động.', true);
+      }
+    }
+
+    function showGridState(title, messageHtml, retryable) {
+      $('#cardGrid').classList.add('hidden');
+      $('#stateTitle').textContent = title;
+      $('#stateMessage').innerHTML = messageHtml;
+      $('#stateRetry').classList.toggle('hidden', !retryable);
+      $('#gridState').classList.remove('hidden');
+    }
+
+    // ═══════════ Render thẻ phòng ═══════════
+    function renderRooms() {
+      $('#cardGrid').innerHTML = state.rooms.map((room, i) => UI.roomCard(room, i, {
+        actions: `
+          <button type="button" data-quick="${i}" class="quick-book absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-bold text-slate-700 shadow-soft backdrop-blur transition-all duration-200 hover:bg-brand-teal hover:text-white">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            Đặt nhanh
+          </button>
+          ${UI.favBtnHTML(room._id, 'absolute bottom-3 right-3')}`,
+      })).join('');
+
+      // Click thẻ → trang chi tiết
+      $$('.room-card').forEach(card => card.addEventListener('click', () => {
+        location.href = 'room.html?id=' + card.dataset.roomId;
+      }));
+      // Đặt nhanh → modal
+      $$('.quick-book').forEach(btn => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openModal(state.rooms[+btn.dataset.quick]);
+      }));
+      // Lưu yêu thích (server-backed qua ui.js)
+      UI.bindFavButtons($('#cardGrid'));
+    }
+
+    // ═══════════ Tìm kiếm ═══════════
+    $('#searchForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      Object.assign(state.filter, {
+        city: $('#searchLocation').value.trim(),
+        guests: $('#searchGuests').value,
+        minPrice: $('#fMinPrice').value,
+        maxPrice: $('#fMaxPrice').value,
+        keyword: $('#fKeyword').value.trim(),
+      });
+      loadRooms();
+      UI.showToast(state.filter.city ? `Đang tìm phòng tại ${state.filter.city}…` : 'Đang tải tất cả homestay…');
+    });
+
+    $$('.suggestion').forEach(btn => btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const city = btn.textContent.replace(/^[^\p{L}]+/u, '').trim() || btn.dataset.city;
+      $('#searchLocation').value = city;
+      state.filter.city = city;
+      loadRooms();
+      window.scrollTo({ top: document.getElementById('cardGrid').offsetTop - 120, behavior: 'smooth' });
+    }));
+
+    $$('.category').forEach(btn => btn.addEventListener('click', () => {
+      $$('.category').forEach(b => {
+        b.classList.remove('bg-brand-teal', 'text-white', 'shadow-soft');
+        b.classList.add('bg-white', 'text-slate-600', 'ring-1', 'ring-slate-200');
+      });
+      btn.classList.add('bg-brand-teal', 'text-white', 'shadow-soft');
+      btn.classList.remove('bg-white', 'text-slate-600', 'ring-1', 'ring-slate-200');
+      state.filter.roomType = btn.dataset.roomType;
+      loadRooms();
+    }));
+
+    $('#stateRetry').addEventListener('click', loadRooms);
+
+    // ═══════════ Modal đặt nhanh ═══════════
+    const modal = $('#bookingModal');
+
+    function openModal(room) {
+      if (!room) return;
+      state.currentRoom = room;
+      state.guests.max = Math.max(1, room.capacity || 10);
+      state.guests.value = Math.min(2, state.guests.max);
+
+      $('#modalRoomName').textContent = room.name.split('—')[0].trim();
+      $('#summaryRoomName').textContent = room.name;
+      $('#summaryRoomImg').src = UI.roomImage(room);
+      $('#summaryRoomMeta').textContent =
+        `${room.address?.city || 'Việt Nam'} · ★ ${Number(room.rating ?? 0).toFixed(1)} (${room.totalReviews || 0} đánh giá)`;
+      $('#summaryRoomPrice').textContent = UI.fmtVND(room.pricePerNight);
+      $('#capacityHint').textContent = `(tối đa ${state.guests.max} khách)`;
+
+      if ($('#searchCheckIn').value) $('#fCheckIn').value = $('#searchCheckIn').value;
+      if ($('#searchCheckOut').value) $('#fCheckOut').value = $('#searchCheckOut').value;
+      renderGuests();
+      updatePrice();
+
+      $('#serverError').classList.add('hidden');
+      $('#bookingForm').classList.remove('hidden');
+      $('#successView').classList.add('hidden');
+      $('#loginBlock').classList.add('hidden');
+      $('#submitBookingBtn').disabled = false;
+      modal.classList.remove('modal-hidden');
+      document.body.classList.add('modal-open');
+    }
+    function closeModal() {
+      modal.classList.add('modal-hidden');
+      document.body.classList.remove('modal-open');
+      state.bookingInFlight = false;
+    }
+    $('#modalClose').addEventListener('click', closeModal);
+    $('#modalBackdrop').addEventListener('click', closeModal);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    // ═══════════ Stepper + giá ═══════════
+    function renderGuests() {
+      $('#guestValue').textContent = state.guests.value;
+      $('#guestLabel').textContent = state.guests.value + ' khách';
+      $('#guestMinus').disabled = state.guests.value <= state.guests.min;
+      $('#guestPlus').disabled = state.guests.value >= state.guests.max;
+    }
+    $('#guestMinus').addEventListener('click', () => { if (state.guests.value > state.guests.min) { state.guests.value--; renderGuests(); updatePrice(); } });
+    $('#guestPlus').addEventListener('click', () => { if (state.guests.value < state.guests.max) { state.guests.value++; renderGuests(); updatePrice(); } });
+
+    function nights() {
+      const ci = new Date($('#fCheckIn').value), co = new Date($('#fCheckOut').value);
+      const n = Math.round((co - ci) / 86400000);
+      return isNaN(n) ? 0 : n;
+    }
+    function updatePrice() {
+      const n = Math.max(nights(), 1);
+      const sub = (state.currentRoom?.pricePerNight || 0) * n;
+      $('#priceNights').textContent = `${n} đêm × ${UI.fmtVND(state.currentRoom?.pricePerNight || 0)}`;
+      $('#priceSubtotal').textContent = UI.fmtVND(sub);
+      $('#priceTotal').textContent = UI.fmtVND(sub);
+    }
+    ['fCheckIn', 'fCheckOut'].forEach(id => $('#' + id).addEventListener('change', updatePrice));
+
+    // ═══════════ Validation ═══════════
+    const rules = {
+      fCheckIn: { test: v => v !== '' && new Date(v) >= new Date(iso(today)), msg: 'Ngày nhận phòng phải từ hôm nay trở đi.' },
+      fCheckOut: { test: v => v !== '' && nights() >= 1, msg: 'Ngày trả phòng phải sau ngày nhận phòng ít nhất 1 đêm.' },
+    };
+    function setError(inputId, msg) {
+      const input = $('#' + inputId);
+      // Tìm thẻ .error theo cây tổ tiên (tránh null khi input nằm trong wrapper riêng)
+      let errEl = null, scope = input.parentElement;
+      while (scope && scope !== document.body) { errEl = scope.querySelector('.error'); if (errEl) break; scope = scope.parentElement; }
+      if (msg) {
+        input.classList.remove('border-slate-200');
+        input.classList.add('border-brand-rose', 'ring-2', 'ring-brand-rose/15');
+        if (errEl) { errEl.textContent = '⚠ ' + msg; errEl.classList.remove('hidden'); }
+      } else {
+        input.classList.add('border-slate-200');
+        input.classList.remove('border-brand-rose', 'ring-2', 'ring-brand-rose/15');
+        if (errEl) errEl.classList.add('hidden');
+      }
+    }
+    Object.keys(rules).forEach(id => $('#' + id).addEventListener('input', () => setError(id, null)));
+    function validateForm() {
+      let first = null;
+      Object.entries(rules).forEach(([id, r]) => {
+        const ok = r.test($('#' + id).value);
+        setError(id, ok ? null : r.msg);
+        if (!ok && !first) first = id;
+      });
+      if (first) { $('#' + first).focus(); $('#' + first).scrollIntoView({ behavior: 'smooth', block: 'center' }); return false; }
+      return true;
+    }
+
+    // ═══════════ Gửi đặt phòng ═══════════
+    $('#bookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (state.bookingInFlight) return;
+      $('#serverError').classList.add('hidden');
+      if (!validateForm()) return;
+
+      if (!Auth.isLogged()) {
+        $('#loginBlock').classList.remove('hidden');
+        $('#loginBlock').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      await submitBooking();
+    });
+
+    async function submitBooking() {
+      const room = state.currentRoom;
+      if (!room) return;
+      state.bookingInFlight = true;
+      const btn = $('#submitBookingBtn');
+      btn.disabled = true; btn.textContent = 'Đang gửi yêu cầu…';
+      try {
+        const res = await API.post('/bookings', {
+          roomId: room._id,
+          checkInDate: $('#fCheckIn').value,
+          checkOutDate: $('#fCheckOut').value,
+          totalGuests: state.guests.value,
+        });
+        const b = res.data;
+        $('#bookingForm').classList.add('hidden');
+        $('#loginBlock').classList.add('hidden');
+        $('#successRoom').textContent = room.name;
+        $('#successBookingId').textContent = b._id || '—';
+        $('#successDates').textContent = `${$('#fCheckIn').value} → ${$('#fCheckOut').value} (${Math.max(nights(), 1)} đêm)`;
+        $('#successTotal').textContent = UI.fmtVND(b.totalPrice ?? nights() * room.pricePerNight);
+        $('#successView').classList.remove('hidden');
+        UI.showToast('Đặt phòng thành công!');
+      } catch (err) {
+        const box = $('#serverError');
+        box.textContent = '⚠ ' + API.serverMessage(err);
+        box.classList.remove('hidden');
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } finally {
+        state.bookingInFlight = false;
+        btn.disabled = false;
+        btn.textContent = 'Xác nhận đặt phòng';
+      }
+    }
+
+    // ═══════════ Đăng nhập nhanh trong modal ═══════════
+    $('#loginSubmit').addEventListener('click', async () => {
+      const email = $('#loginEmail').value.trim();
+      const password = $('#loginPassword').value;
+      const errEl = $('#loginError');
+      if (!email || !password) {
+        errEl.textContent = '⚠ Vui lòng nhập email và mật khẩu.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      const btn = $('#loginSubmit');
+      btn.disabled = true; btn.textContent = 'Đang đăng nhập…';
+      try {
+        await Auth.login(email, password);
+        $('#loginBlock').classList.add('hidden');
+        errEl.classList.add('hidden');
+        UI.showToast(`Đăng nhập thành công, ${Auth.user.fullName}!`);
+        UI.renderHeader('home');
+        updateHeroCta();
+        await submitBooking();
+      } catch (err) {
+        errEl.textContent = '⚠ ' + API.serverMessage(err);
+        errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Đăng nhập & tiếp tục đặt phòng';
+      }
+    });
+
+    // ═══════════ CTA theo vai trò trên Hero ═══════════
+    function updateHeroCta() {
+      const box = $('#heroRoleCta');
+      if (!Auth.isLogged()) {
+        box.innerHTML = `
+          <a href="auth.html?mode=register&role=host" class="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-slate-800 shadow-soft ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift hover:ring-brand-teal hover:text-brand-teal">
+            🏠 Trở thành chủ homestay
+          </a>`;
+      } else if (Auth.isHostOrAdmin()) {
+        box.innerHTML = `
+          <a href="host.html" class="inline-flex items-center gap-2 rounded-xl bg-brand-teal px-6 py-3.5 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-teal-dark hover:shadow-lift">
+            🏠 Đăng phòng & quản lý homestay
+          </a>
+          <a href="my-bookings.html" class="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-slate-800 shadow-soft ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift hover:ring-brand-teal hover:text-brand-teal">
+            📋 Đơn của tôi
+          </a>`;
+        $('#heroSub').textContent = `Xin chào ${Auth.user.fullName}! Quản lý homestay, đơn đặt phòng và doanh thu của bạn tại đây.`;
+      } else {
+        box.innerHTML = `
+          <a href="my-bookings.html" class="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-slate-800 shadow-soft ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift hover:ring-brand-teal hover:text-brand-teal">
+            📋 Đơn của tôi
+          </a>`;
+        $('#heroSub').textContent = `Xin chào ${Auth.user.fullName}! Bạn đã sẵn sàng cho chuyến đi tiếp theo chưa?`;
+      }
+    }
+
+    // Chỉ role=host từ URL (nút "Trở thành chủ nhà" ở auth.html?mode=register&role=host handled ở auth page)
+
+    // ═══════════ Init ═══════════
+    (async () => {
+      await Auth.loadUser();
+      UI.renderHeader('home');
+      updateHeroCta();
+      if (new URLSearchParams(location.search).get('denied')) {
+        UI.showToast('Bạn không có quyền truy cập trang đó', 'error');
+      }
+      await UI.favorites.load();
+      await loadRooms();
+    })();
+  </script>
+</body>
+</html>

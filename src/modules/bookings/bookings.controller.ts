@@ -14,6 +14,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { Types } from 'mongoose';
+import { Throttle } from '@nestjs/throttler';
 import { BookingsService } from './bookings.service.js';
 import { CreateBookingDto } from './dto/create-booking.dto.js';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto.js';
@@ -35,6 +36,8 @@ export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
   @Post()
+  // Chống spam đặt phòng: tối đa 20 đơn / phút
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @ApiOperation({ summary: 'Khách hàng đặt phòng homestay / khách sạn' })
   @ApiResponse({ status: 201, description: 'Đặt phòng thành công' })
   create(

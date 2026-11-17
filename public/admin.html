@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trang quản trị — StayNest</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230D9488'/%3E%3Cpath d='M5 12l7-6 7 6M7.5 11v7h3.5v-4h2v4h3.5v-7' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { brand: { teal: '#0D9488', 'teal-dark': '#0F766E', 'teal-soft': '#F0FDFA', rose: '#F43F5E', 'rose-soft': '#FFF1F2' } },
+        fontFamily: { sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+        boxShadow: { soft: '0 4px 24px -6px rgba(15, 23, 42, 0.08)', lift: '0 20px 40px -12px rgba(15, 23, 42, 0.16)', bar: '0 12px 40px -8px rgba(15, 23, 42, 0.18)' },
+      } },
+    };
+  </script>
+  <style>
+    .thin-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
+    .thin-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 999px; }
+    table.data th { position: sticky; top: 0; }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800 antialiased">
+  <div id="appHeader" class="sticky top-0 z-40 w-full border-b border-slate-100 bg-white/85 backdrop-blur-md"></div>
+
+  <main class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div class="mb-8">
+      <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Trang quản trị</h1>
+      <p class="mt-2 text-sm text-slate-500">Tổng quan hệ thống, quản lý người dùng và toàn bộ đơn đặt phòng.</p>
+    </div>
+
+    <!-- Thẻ thống kê -->
+    <div class="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Người dùng</p>
+        <p id="statUsers" class="mt-1.5 text-2xl font-extrabold text-slate-900">—</p>
+        <p id="statUsersSub" class="mt-1 text-xs text-slate-400"></p>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Homestay (đang mở)</p>
+        <p id="statRooms" class="mt-1.5 text-2xl font-extrabold text-slate-900">—</p>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Tổng số đơn</p>
+        <p id="statBookings" class="mt-1.5 text-2xl font-extrabold text-slate-900">—</p>
+        <p id="statBookingsSub" class="mt-1 text-xs text-slate-400"></p>
+      </div>
+      <div class="rounded-2xl bg-white p-5 shadow-soft">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Doanh thu (xác nhận + hoàn thành)</p>
+        <p id="statRevenue" class="mt-1.5 text-2xl font-extrabold text-emerald-600">—</p>
+      </div>
+    </div>
+
+    <!-- ══ Quản lý người dùng ══ -->
+    <section class="mb-12">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg font-extrabold text-slate-900">👥 Quản lý người dùng</h2>
+        <input id="userSearch" type="text" placeholder="Tìm theo tên hoặc email…"
+          class="w-64 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition-all duration-200 placeholder:text-slate-300 focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20" />
+      </div>
+      <div class="overflow-hidden rounded-3xl bg-white shadow-soft">
+        <div class="thin-scroll max-h-[420px] overflow-auto">
+          <table class="data w-full text-left text-sm">
+            <thead class="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-400">
+              <tr>
+                <th class="px-5 py-3.5">Người dùng</th>
+                <th class="px-5 py-3.5">Vai trò</th>
+                <th class="px-5 py-3.5">SĐT</th>
+                <th class="px-5 py-3.5">Ngày tạo</th>
+                <th class="px-5 py-3.5 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+        <p id="usersEmpty" class="hidden px-5 py-10 text-center text-sm text-slate-500">Không tìm thấy người dùng phù hợp.</p>
+      </div>
+    </section>
+
+    <!-- ══ Toàn bộ đơn đặt phòng ══ -->
+    <section>
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 class="text-lg font-extrabold text-slate-900">📋 Toàn bộ đơn đặt phòng</h2>
+        <div class="flex gap-3 overflow-x-auto pb-1">
+          <button class="admin-filter rounded-full bg-brand-teal px-4 py-2 text-xs font-bold text-white shadow-soft transition-all duration-200" data-status="">Tất cả</button>
+          <button class="admin-filter rounded-full bg-white px-4 py-2 text-xs font-bold text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:ring-brand-teal hover:text-brand-teal" data-status="pending">Chờ xác nhận</button>
+          <button class="admin-filter rounded-full bg-white px-4 py-2 text-xs font-bold text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:ring-brand-teal hover:text-brand-teal" data-status="confirmed">Đã xác nhận</button>
+          <button class="admin-filter rounded-full bg-white px-4 py-2 text-xs font-bold text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:ring-brand-teal hover:text-brand-teal" data-status="completed">Hoàn thành</button>
+          <button class="admin-filter rounded-full bg-white px-4 py-2 text-xs font-bold text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:ring-brand-teal hover:text-brand-teal" data-status="cancelled">Đã hủy</button>
+        </div>
+      </div>
+      <div class="overflow-hidden rounded-3xl bg-white shadow-soft">
+        <div class="thin-scroll max-h-[520px] overflow-auto">
+          <table class="data w-full text-left text-sm">
+            <thead class="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-400">
+              <tr>
+                <th class="px-5 py-3.5">Mã đơn</th>
+                <th class="px-5 py-3.5">Khách hàng</th>
+                <th class="px-5 py-3.5">Homestay</th>
+                <th class="px-5 py-3.5">Ngày</th>
+                <th class="px-5 py-3.5">Tổng tiền</th>
+                <th class="px-5 py-3.5">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+        <p id="bookingsEmpty" class="hidden px-5 py-10 text-center text-sm text-slate-500">Không có đơn nào ở trạng thái này.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/api.js"></script>
+  <script src="assets/auth.js"></script>
+  <script src="assets/ui.js"></script>
+  <script>
+    const $ = (s) => document.querySelector(s);
+    let users = [];
+    let allBookings = [];
+    let bookingFilter = '';
+
+    const ROLE_BADGE = {
+      admin:    '<span class="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-white">Quản trị viên</span>',
+      host:     '<span class="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">Chủ nhà</span>',
+      customer: '<span class="rounded-full bg-brand-teal-soft px-2.5 py-1 text-[11px] font-bold text-brand-teal">Khách hàng</span>',
+    };
+
+    // ═══════════ Người dùng ═══════════
+    async function loadUsers() {
+      try {
+        const res = await API.get('/users');
+        users = res.data || [];
+      } catch (err) {
+        UI.showToast(API.serverMessage(err), 'error');
+        users = [];
+      }
+      renderUsers();
+      renderStats();
+    }
+
+    function renderUsers() {
+      const q = $('#userSearch').value.trim().toLowerCase();
+      const list = q ? users.filter(u =>
+        (u.fullName || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)) : users;
+      $('#usersEmpty').classList.toggle('hidden', list.length !== 0);
+      $('#usersBody').innerHTML = list.map(u => {
+        const isMe = Auth.user && u._id === Auth.user._id;
+        return `
+        <tr class="transition-colors duration-200 hover:bg-slate-50/70">
+          <td class="px-5 py-3.5">
+            <div class="flex items-center gap-3">
+              <span class="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-slate-100 text-xs font-extrabold text-slate-600">
+                ${u.avatar ? `<img src="${UI.esc(u.avatar)}" class="h-full w-full object-cover" alt="" />` : UI.esc(UI.initial(u.fullName))}
+              </span>
+              <div class="min-w-0">
+                <p class="truncate font-bold text-slate-900">${UI.esc(u.fullName)}${isMe ? ' <span class="rounded bg-brand-teal-soft px-1.5 py-0.5 text-[10px] font-bold text-brand-teal">(bạn)</span>' : ''}</p>
+                <p class="truncate text-xs text-slate-400">${UI.esc(u.email)}</p>
+              </div>
+            </div>
+          </td>
+          <td class="px-5 py-3.5">${ROLE_BADGE[u.role] || UI.esc(u.role)}</td>
+          <td class="px-5 py-3.5 text-slate-600">${UI.esc(u.phoneNumber || '—')}</td>
+          <td class="px-5 py-3.5 text-slate-600">${UI.fmtDate(u.createdAt)}</td>
+          <td class="px-5 py-3.5 text-right">
+            ${isMe
+              ? '<span class="text-xs text-slate-300">—</span>'
+              : `<button data-id="${u._id}" data-name="${UI.esc(u.fullName)}" class="user-del rounded-xl border border-brand-rose/30 bg-brand-rose-soft px-3.5 py-2 text-xs font-bold text-brand-rose transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-rose hover:text-white">Xóa</button>`}
+          </td>
+        </tr>`;
+      }).join('');
+
+      document.querySelectorAll('.user-del').forEach(btn => btn.addEventListener('click', async () => {
+        if (!confirm(`Xóa tài khoản "${btn.dataset.name}"? Hành động này không thể hoàn tác.`)) return;
+        try {
+          await API.del('/users/' + btn.dataset.id);
+          UI.showToast('Đã xóa người dùng');
+          await Promise.all([loadUsers(), loadBookings()]);
+        } catch (err) { UI.showToast(API.serverMessage(err), 'error'); }
+      }));
+    }
+
+    // ═══════════ Đơn đặt phòng ═══════════
+    async function loadBookings() {
+      try {
+        const res = await API.get('/bookings');
+        allBookings = res.data || [];
+      } catch (err) {
+        UI.showToast(API.serverMessage(err), 'error');
+        allBookings = [];
+      }
+      renderBookings();
+      renderStats();
+    }
+
+    function renderBookings() {
+      const list = bookingFilter ? allBookings.filter(b => b.status === bookingFilter) : allBookings;
+      $('#bookingsEmpty').classList.toggle('hidden', list.length !== 0);
+      $('#bookingsBody').innerHTML = list.map(b => {
+        const cust = typeof b.customerId === 'object' ? b.customerId : null;
+        const room = typeof b.roomId === 'object' ? b.roomId : null;
+        const options = ['pending', 'confirmed', 'completed', 'cancelled'].map(s =>
+          `<option value="${s}" ${b.status === s ? 'selected' : ''}>${{ pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', completed: 'Hoàn thành', cancelled: 'Đã hủy' }[s]}</option>`).join('');
+        return `
+        <tr class="transition-colors duration-200 hover:bg-slate-50/70">
+          <td class="px-5 py-3.5 font-mono text-xs font-bold text-slate-500">${UI.esc(String(b._id).slice(-8).toUpperCase())}</td>
+          <td class="px-5 py-3.5">
+            <p class="font-bold text-slate-900">${UI.esc(cust?.fullName || '—')}</p>
+            <p class="text-xs text-slate-400">${UI.esc(cust?.email || '')}</p>
+          </td>
+          <td class="px-5 py-3.5">
+            <p class="max-w-[220px] truncate font-semibold text-slate-800">${UI.esc(room?.name || '—')}</p>
+            <p class="text-xs text-slate-400">${UI.esc(room?.address?.city || '')}</p>
+          </td>
+          <td class="px-5 py-3.5 text-slate-600">
+            <p class="whitespace-nowrap">${UI.fmtDate(b.checkInDate)} → ${UI.fmtDate(b.checkOutDate)}</p>
+            <p class="text-xs text-slate-400">${b.numberOfNights} đêm · ${b.totalGuests} khách</p>
+          </td>
+          <td class="px-5 py-3.5 font-extrabold text-slate-900">${UI.fmtVND(b.totalPrice)}</td>
+          <td class="px-5 py-3.5">
+            <select data-id="${b._id}" class="status-select cursor-pointer rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold outline-none transition-all duration-200 focus:border-brand-teal">
+              ${options}
+            </select>
+            <div class="mt-1.5">${UI.paymentBadge(b.paymentStatus)}</div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      document.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', async () => {
+        try {
+          await API.patch('/bookings/' + sel.dataset.id + '/status', { status: sel.value });
+          UI.showToast('Đã cập nhật trạng thái đơn!');
+          await Promise.all([loadBookings(), loadUsers()]);
+        } catch (err) {
+          UI.showToast(API.serverMessage(err), 'error');
+          await loadBookings();
+        }
+      }));
+    }
+
+    document.querySelectorAll('.admin-filter').forEach(tab => tab.addEventListener('click', () => {
+      document.querySelectorAll('.admin-filter').forEach(t => {
+        t.classList.remove('bg-brand-teal', 'text-white', 'shadow-soft');
+        t.classList.add('bg-white', 'text-slate-600', 'ring-1', 'ring-slate-200');
+      });
+      tab.classList.add('bg-brand-teal', 'text-white', 'shadow-soft');
+      tab.classList.remove('bg-white', 'text-slate-600', 'ring-1', 'ring-slate-200');
+      bookingFilter = tab.dataset.status;
+      renderBookings();
+    }));
+
+    $('#userSearch').addEventListener('input', renderUsers);
+
+    // ═══════════ Thống kê ═══════════
+    function renderStats() {
+      $('#statUsers').textContent = users.length;
+      const hosts = users.filter(u => u.role === 'host').length;
+      const customers = users.filter(u => u.role === 'customer').length;
+      $('#statUsersSub').textContent = `${hosts} chủ nhà · ${customers} khách hàng`;
+      $('#statBookings').textContent = allBookings.length;
+      const pending = allBookings.filter(b => b.status === 'pending').length;
+      $('#statBookingsSub').textContent = `${pending} đơn đang chờ xác nhận`;
+      const revenue = allBookings
+        .filter(b => b.status === 'confirmed' || b.status === 'completed')
+        .reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+      $('#statRevenue').textContent = UI.fmtVND(revenue);
+    }
+
+    async function loadRoomCount() {
+      try {
+        const res = await API.get('/rooms');
+        $('#statRooms').textContent = (res.data || []).length;
+      } catch (_) { $('#statRooms').textContent = '—'; }
+    }
+
+    // ═══════════ Init ═══════════
+    (async () => {
+      await Auth.loadUser();
+      if (!Auth.requireRole(['admin'], 'admin.html')) return;
+      UI.renderHeader('admin');
+      await Promise.all([loadUsers(), loadBookings(), loadRoomCount()]);
+    })();
+  </script>
+</body>
+</html>

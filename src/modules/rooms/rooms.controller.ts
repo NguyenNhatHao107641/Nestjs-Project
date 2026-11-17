@@ -69,6 +69,12 @@ export class RoomsController {
     return this.roomsService.findById(id);
   }
 
+  @Get(':id/availability')
+  @ApiOperation({ summary: 'Xem các khoảng ngày đã có khách đặt của phòng (công khai)' })
+  findAvailability(@Param('id', ParseObjectIdPipe) id: Types.ObjectId) {
+    return this.roomsService.findAvailability(id);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.HOST, UserRole.ADMIN)
