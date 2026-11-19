@@ -1,6 +1,6 @@
 # Website Quản lý và Đặt phòng Homestay / Khách sạn (NestJS + MongoDB)
 
-Hệ thống backend API quản lý và đặt phòng homestay / khách sạn được xây dựng bằng **NestJS** kết hợp cơ sở dữ liệu **MongoDB**. Dự án áp dụng kiến trúc chuẩn Modular & MVC, phân quyền tài khoản (Admin, Host, Customer), xác thực JWT + Refresh Token, bộ lọc phòng nâng cao, kiểm tra trùng lịch đặt phòng và hỗ trợ đồng thời REST API (Swagger) lẫn GraphQL.
+Hệ thống backend API quản lý và đặt phòng homestay / khách sạn được xây dựng bằng **NestJS** kết hợp cơ sở dữ liệu **MongoDB**. Dự án áp dụng kiến trúc chuẩn Modular & MVC, phân quyền tài khoản (Admin, Host, Customer), xác thực JWT + Refresh Token, bộ lọc phòng nâng cao, kiểm tra trùng lịch đặt phòng, hỗ trợ đồng thời REST API (Swagger) lẫn GraphQL, và tích hợp **chat AI tư vấn homestay** (Google Gemini) kèm ngữ cảnh phòng từ DB.
 
 ---
 
@@ -37,6 +37,9 @@ JWT_SECRET=HomestaySecretKey2026_SecureJwtPayloadKey
 JWT_EXPIRES_IN=1h
 REFRESH_TOKEN_SECRET=HomestayRefreshTokenSecretKey2026_SuperSecure
 REFRESH_TOKEN_EXPIRES_IN=7d
+
+# Cấu hình AI Chat (Google Gemini): lấy key tại https://aistudio.google.com/apikey
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### Bước 3: Biên dịch & nạp dữ liệu mẫu
@@ -80,3 +83,4 @@ Sau khi chạy lệnh `npm run seed`, hệ thống có sẵn các tài khoản:
 
 - [Tài liệu Kiến trúc & Bản đồ code (docs/ARCHITECTURE.md)](docs/ARCHITECTURE.md)
 - [Nhật ký Fix Bug & Quản lý Issue (docs/BUGS.md)](docs/BUGS.md)
+- [Hướng dẫn thuyết trình & phân chia 3 phần (docs/presentation/README.md)](docs/presentation/README.md)

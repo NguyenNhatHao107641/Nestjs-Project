@@ -20,6 +20,7 @@ import { RoomsModule } from './modules/rooms/rooms.module.js';
 import { BookingsModule } from './modules/bookings/bookings.module.js';
 import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { FavoritesModule } from './modules/favorites/favorites.module.js';
+import { ChatModule } from './modules/chat/chat.module.js';
 import { AppGraphQLModule } from './modules/graphql/app-graphql.module.js';
 
 /**
@@ -58,6 +59,7 @@ import { AppGraphQLModule } from './modules/graphql/app-graphql.module.js';
     BookingsModule,
     ReviewsModule,
     FavoritesModule,
+    ChatModule,
     AppGraphQLModule,
   ],
   controllers: [AppController],
