@@ -28,9 +28,9 @@
 
 | Thành viên | Phần | Trọng tâm | File chính |
 |---|---|---|---|
-| **TV1** | Kiến trúc & Nền tảng Backend | Bootstrap, Module, Config, DB, Auth (JWT), Users, Common (Guards/Filters/...) | `src/main.ts`, `app.module.ts`, `modules/auth`, `modules/users`, `common/*`, `config/*` |
-| **TV2** | Nghiệp vụ cốt lõi & Dữ liệu | Rooms, Bookings, Reviews, Favorites, Seed, Helpers, Entities | `entities/*`, `modules/rooms`, `bookings`, `reviews`, `favorites`, `scripts/seed.ts` |
-| **TV3** | Frontend StayNest & Tích hợp | Trang HTML, assets JS, GraphQL, Docs, Tests | `public/*`, `modules/graphql`, `docs/*`, `test/*` |
+| **TV1** | Kiến trúc, Auth & Bảo mật | Bootstrap, Module, Config, DB, JWT/Refresh, Users, Guards/Filters/Interceptors, Rate limit, backend Chat | `src/main.ts`, `app.module.ts`, `modules/auth`, `modules/users`, `modules/chat`, `common/*`, `config/*` |
+| **TV2** | Room, Booking & Nghiệp vụ cốt lõi | Schema dữ liệu, CRUD phòng, filter/pagination, availability, upload ảnh, booking, payment, cancellation, cron, reviews, favorites, seed | `entities/*`, `modules/rooms`, `bookings`, `reviews`, `favorites`, `tasks`, `scripts/seed.ts`, `utils/*` |
+| **TV3** | Frontend & Tích hợp API | Các luồng giao diện theo vai trò, assets JS, GraphQL, Swagger, test và tài liệu | `public/*`, `modules/graphql`, `docs/*`, `test/*` |
 
 > Mỗi phần có file hướng dẫn riêng trong thư mục này:
 > - [`part1-backend-foundation.md`](./part1-backend-foundation.md) — TV1
@@ -42,10 +42,10 @@
 ## 3. Lộ trình thuyết trình gợi ý (15–20 phút)
 
 1. **Giới thiệu (1 phút)** — cả nhóm: tên dự án, mục tiêu, tech stack, 3 vai trò.
-2. **TV1 (5 phút)** — kiến trúc NestJS, luồng request, Auth JWT + Refresh, RBAC, bảo mật (throttler).
-3. **TV2 (6 phút)** — dữ liệu (schema), CRUD phòng + filter, luồng đặt phòng chống trùng lịch, tính tiền, review rating, favorites, availability.
-4. **TV3 (5 phút)** — demo giao diện StayNest theo 3 vai trò, luồng FE (auto refresh token), GraphQL, Swagger, tài liệu.
-5. **Kết luận & Q&A (3 phút)** — cả nhóm: điểm mạnh, hạn chế, hướng phát triển.
+2. **TV1 (5 phút)** — kiến trúc NestJS, luồng request, Auth JWT + Refresh, RBAC, rate limiting và Chat backend.
+3. **TV2 (7 phút)** — schema, CRUD/filter/pagination phòng, availability, overlap booking, tính tiền, payment/cancellation, review, favorites và seed.
+4. **TV3 (5 phút)** — demo 3 vai trò, luồng frontend gọi API, auto refresh token, GraphQL, Swagger và test.
+5. **Kết luận & Q&A (2 phút)** — cả nhóm: điểm mạnh, hạn chế, hướng phát triển.
 
 ---
 
@@ -57,6 +57,7 @@
 - [ ] Mở sẵn tab Swagger `/api/docs` và GraphQL `/graphql`.
 - [ ] Chuẩn bị 3 trình duyệt/profile để đăng nhập 3 vai trò đồng thời.
 - [ ] Test nhanh: đặt phòng trùng lịch → phải ra lỗi 400 tiếng Việt.
+- [ ] Test phân trang: trang chủ hiển thị tối đa 12 phòng/trang; chuyển trang 2 và giữ được bộ lọc.
 - [ ] Test rate limit: đập login 11 lần → 429.
 
 ---
@@ -70,7 +71,7 @@
 - **FE tự refresh token ra sao?** → `api.js` bắt 401 → gọi `/auth/refresh` → retry 1 lần → nếu vẫn 401 thì logout.
 - **Rate limiting?** → `@nestjs/throttler`, guard toàn cục 120 req/phút/IP, siết riêng login/register/refresh/booking.
 - **GraphQL làm gì?** → Cổng truy vấn phòng (`getRooms`, `getRoomById`) song song REST.
-- **Điểm hạn chế / hướng phát triển?** → Thanh toán, upload ảnh thật, email, phân trang, job định kỳ (xem `docs/WORKLOG.md` phần "Việc đề xuất tiếp theo").
+- **Điểm hạn chế / hướng phát triển?** → Thanh toán thật qua cổng bên thứ ba, email SMTP production, lưu ảnh S3/Cloudinary, chat realtime và cache phân tán.
 
 ---
 
@@ -95,6 +96,7 @@ src/
 ├── utils/helpers.ts                                            → TV2
 │
 ├── modules/graphql/*                                           → TV3
+├── modules/tasks/*                                             → TV2
 ├── public/* (index, auth, room, favorites, my-bookings,        → TV3
 │   profile, host, admin, assets/*)
 ├── docs/* (ARCHITECTURE, BUGS, WORKLOG, presentation/*)        → TV3

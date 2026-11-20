@@ -23,6 +23,7 @@ src/modules/rooms/*          # controller, service, module, dto (create/update/f
 src/modules/bookings/*       # controller, service, module, dto (create/update-status)
 src/modules/reviews/*        # controller, service, module, dto
 src/modules/favorites/*      # controller, service, module
+src/modules/tasks/*          # cron tự hoàn thành booking quá hạn
 src/scripts/seed.ts
 src/utils/helpers.ts         # calculateNights(), formatCurrencyVND()
 ```
@@ -45,10 +46,12 @@ src/utils/helpers.ts         # calculateNights(), formatCurrencyVND()
 
 **Controller routes (JWT where needed):**
 - `GET /rooms` (public) + `FilterRoomDto` query: city, roomType, guests, minPrice, maxPrice, keyword.
+- `GET /rooms?page=1&limit=12` → pagination `{ items, total, page, limit, totalPages }`.
 - `GET /rooms/:id` (public).
 - `GET /rooms/:id/availability` (public) → các khoảng ngày đã đặt.
-- `GET /rooms/host/my` (host) → phòng của tôi.
+- `GET /rooms/my-rooms` (host) → phòng của tôi.
 - `POST /rooms` (host) → tạo phòng.
+- `POST /rooms/:id/images` (host/admin, multipart, tối đa 5MB) → upload ảnh.
 - `PATCH /rooms/:id` (host/admin, chủ phòng) → sửa.
 - `DELETE /rooms/:id` (host/admin, chủ phòng) → xóa.
 
@@ -88,12 +91,16 @@ src/utils/helpers.ts         # calculateNights(), formatCurrencyVND()
 **Các route:**
 - `POST /bookings` (customer, throttled 20/phút).
 - `GET /bookings` (admin) → tất cả.
-- `GET /bookings/my` (customer) → đơn của tôi.
-- `GET /bookings/host` (host) → đơn vào phòng của tôi (join qua room.hostId).
+- `GET /bookings/my-bookings` (customer) → đơn của tôi.
+- `GET /bookings/host-bookings` (host) → đơn vào phòng của tôi (join qua room.hostId).
 - `GET /bookings/:id`.
 - `PATCH /bookings/:id/status` → host confirm/complete/cancel; customer chỉ cancel; admin mọi thứ.
+- `PATCH /bookings/:id/pay` → thanh toán giả lập, chuyển `paymentStatus` sang `paid`.
+- `PATCH /bookings/:id/refund` (admin) → chuyển `paymentStatus` sang `refunded`.
 
 **`updateStatus`:** kiểm tra quyền: customer chỉ được cancel đơn của mình; host chỉ đơn vào phòng mình; admin tất cả. Cũng xử lý populate `_id` như trên.
+
+**Chính sách hủy & cron:** khách chỉ được hủy trước 24 giờ so với check-in; `TasksService` chạy mỗi ngày để chuyển booking `confirmed` đã quá checkout sang `completed`.
 
 ## 6. Module Reviews
 
@@ -118,7 +125,7 @@ src/utils/helpers.ts         # calculateNights(), formatCurrencyVND()
 - Kết nối MongoDB theo `.env`.
 - Xóa dữ liệu cũ (users/rooms/bookings/reviews/favorites).
 - Tạo 3 tài khoản demo: customer/host/admin (password `123456`, bcrypt).
-- Tạo phòng mẫu (host owns), booking mẫu, review mẫu.
+- Tạo 24 phòng mẫu ở nhiều điểm đến, booking đa trạng thái, review mẫu và tài khoản customer thứ hai.
 - Chạy: `npm run build` rồi `npm run seed`.
 
 ## 9. Helpers (`utils/helpers.ts`)

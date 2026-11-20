@@ -74,7 +74,9 @@
 
     /** Đăng xuất: thu hồi refresh token ở server rồi xóa phiên ở máy */
     async logout() {
-      try { await API.post('/auth/logout', {}); } catch (_) { /* vẫn xóa phiên local */ }
+      // Logout phải luôn thành công ở phía client, kể cả access token đã cũ
+      // (ví dụ user bị xóa sau khi chạy lại npm run seed).
+      try { await API.post('/auth/logout', {}, { _noRetry: true }); } catch (_) { /* 401/404: bỏ qua */ }
       this.clearSession();
     },
 

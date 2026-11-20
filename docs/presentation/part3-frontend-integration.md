@@ -1,8 +1,8 @@
 # Phần 3 — Frontend StayNest & Tích hợp (Thành viên 3)
 
 > **Phạm vi:** Giao diện web đa trang (StayNest) phục vụ bởi chính NestJS, các asset JS dùng chung
-> (api/auth/ui), phân quyền hiển thị theo vai trò, phòng yêu thích & lịch trống phía client,
-> cổng GraphQL, tài liệu dự án (architecture/bugs/worklog), và test (unit/e2e).
+> (api/auth/ui), phân quyền hiển thị theo vai trò, phân trang/phòng yêu thích/lịch trống phía client,
+> cổng GraphQL, tài liệu dự án và test (unit/e2e). TV3 tập trung demo tích hợp; không cần trình bày sâu toàn bộ nghiệp vụ backend.
 
 ## 1. Mục tiêu phần này
 
@@ -18,7 +18,7 @@ public/
   assets/api.js        # Fetch wrapper: Bearer token, auto refresh 401, chuẩn hóa lỗi
   assets/auth.js       # Trạng thái login + RBAC: requireAuth, requireRole, Auth.*
   assets/ui.js         # Header theo vai trò, toast, badge, roomCard, favorites engine
-  index.html           # Trang chủ: hero, search, filter, modal đặt nhanh, ♥
+   index.html           # Trang chủ: hero, search, filter, pagination 12 phòng/trang, modal đặt nhanh, ♥
   auth.html            # Đăng nhập/Đăng ký (tab, chọn vai trò)
   room.html            # Chi tiết: gallery, tiện ích, đặt phòng, đánh giá, ♥, lịch trống
   favorites.html       # Phòng yêu thích (grid, gỡ)
@@ -83,6 +83,7 @@ Trang HTML → Auth.loadUser() → api.js GET /users/me (Bearer)
 
 - **Favorites:** nút ♥ trên card; click → `UI.favorites.toggle(roomId)` → toast + tô đỏ; `favorites.html` grid phòng đã lưu, bấm ♥ → gỡ thẻ; empty state CTA.
 - **Availability:** `room.html` gọi `GET /rooms/:id/availability` → khối "Ngày đã có khách đặt" (✗ dd/MM → dd/MM); hàm `overlapsBooked()` chặn chọn ngày trùng trước khi gửi; backend vẫn chặn lớp 2.
+- **Pagination:** `index.html` gọi `GET /rooms?page=1&limit=12`; chuyển trang giữ nguyên bộ lọc, thay đổi filter sẽ reset về trang 1.
 
 ## 8. GraphQL
 

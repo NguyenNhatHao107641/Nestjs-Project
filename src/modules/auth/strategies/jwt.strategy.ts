@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
@@ -30,7 +30,17 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JwtPayload) {
-    const user = await this.usersService.findById(payload.sub);
+    let user: Awaited<ReturnType<UsersService['findById']>>;
+    try {
+      user = await this.usersService.findById(payload.sub);
+    } catch (error) {
+      // Token cũ có thể còn trong trình duyệt sau khi user bị xóa hoặc chạy lại seed.
+      // Trường hợp này là lỗi xác thực, không phải lỗi 404 của tài nguyên users.
+      if (error instanceof NotFoundException) {
+        throw new UnauthorizedException('Token không hợp lệ hoặc người dùng không tồn tại');
+      }
+      throw error;
+    }
     if (!user) {
       throw new UnauthorizedException('Token không hợp lệ hoặc người dùng không tồn tại');
     }

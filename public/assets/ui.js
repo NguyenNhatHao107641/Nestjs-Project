@@ -109,6 +109,11 @@
               <svg class="h-[18px] w-[18px] text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
               Trang quản trị
             </a>` : ''}
+            <button id="darkToggle" type="button"
+              class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-slate-700 transition-colors duration-200 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800">
+              <span id="darkToggleIcon" class="text-base">🌙</span>
+              <span id="darkToggleLabel">Chế độ tối</span>
+            </button>
             <div class="my-1.5 border-t border-slate-100"></div>
             <button id="logoutBtn" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-brand-rose transition-colors duration-200 hover:bg-brand-rose-soft">
               <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -127,13 +132,7 @@
           <span class="text-xl font-extrabold tracking-tight text-slate-900">Stay<span class="text-brand-teal">Nest</span></span>
         </a>
         <nav class="hidden items-center gap-7 lg:flex">${nav}</nav>
-        <div class="flex items-center gap-2">
-          <button id="darkToggle" type="button" aria-label="Che do toi/sang"
-            class="grid h-9 w-9 place-items-center rounded-full border border-slate-200 text-slate-500 transition-all duration-200 hover:border-brand-teal hover:text-brand-teal dark:border-slate-700 dark:text-slate-300">
-            <span id="darkToggleIcon">🌙</span>
-          </button>
-          ${userMenu}
-        </div>
+        <div class="flex items-center gap-2">${userMenu}</div>
       </div>`;
   }
 
@@ -165,7 +164,11 @@
     const darkBtn = document.getElementById('darkToggle');
     const darkIcon = document.getElementById('darkToggleIcon');
     function syncDarkIcon() {
-      if (darkIcon) darkIcon.textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+      const isDark = document.documentElement.classList.contains('dark');
+      const icon = document.getElementById('darkToggleIcon');
+      const label = document.getElementById('darkToggleLabel');
+      if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+      if (label) label.textContent = isDark ? 'Chế độ sáng' : 'Chế độ tối';
     }
     syncDarkIcon();
     if (darkBtn) {

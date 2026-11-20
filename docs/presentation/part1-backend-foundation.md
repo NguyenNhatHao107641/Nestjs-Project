@@ -2,7 +2,7 @@
 
 > **Phạm vi:** Toàn bộ "khung xương" NestJS: bootstrap, module gốc, cấu hình, kết nối DB,
 > middleware, common (guards/filters/interceptors/pipes/decorators), xác thực JWT + Refresh Token,
-> quản lý người dùng. Đây là phần giải thích **cách hệ thống vận hành** trước khi đi vào nghiệp vụ.
+> quản lý người dùng và backend Chat Gemini. Đây là phần giải thích **cách hệ thống vận hành** trước khi đi vào nghiệp vụ.
 
 ## 1. Mục tiêu phần này
 
@@ -118,7 +118,16 @@ Client → LoggerMiddleware (log method/url/ip/time)
 - Swagger `/api/docs`: tự sinh từ decorator `@ApiTags`, `@ApiOperation`, DTO.
 - Endpoint hệ thống `GET /api` (AppController) trả thông tin server (vì `/` là trang chủ tĩnh).
 
-## 9. Demo gợi ý (TV1)
+## 9. Backend Chat Gemini
+
+- Module: `src/modules/chat/`.
+- Endpoint: `POST /chat`, nhận `{ message, history }`.
+- Service lấy phòng khả dụng từ MongoDB làm ngữ cảnh cho Gemini.
+- Có fallback model khi Gemini quá tải/404/429/5xx và fallback rule-based nếu tất cả model đều lỗi.
+- Route được giới hạn 20 request/phút bằng `@Throttle`.
+- TV3 demo widget chat; TV1 giải thích module, service và xử lý lỗi backend.
+
+## 10. Demo gợi ý (TV1)
 
 1. Mở Swagger `/api/docs`.
 2. `POST /auth/register` tạo user customer → 201.
@@ -128,7 +137,7 @@ Client → LoggerMiddleware (log method/url/ip/time)
 6. Hết hạn/invalid token → 401; gọi `/auth/refresh` → token mới.
 7. Đập login 11 lần → 429 tiếng Việt.
 
-## 10. Câu hỏi likely (TV1)
+## 11. Câu hỏi likely (TV1)
 
 - **Dependency Injection trong Nest hoạt động thế nào?** → Provider đăng ký trong module, Nest container inject qua constructor; singleton scope mặc định.
 - **Middleware vs Guard vs Interceptor vs Pipe khác nhau?** → Middleware: request/response thô (Express); Guard: quyết định cho phép vào route (auth); Pipe: transform/validate input; Interceptor: bọc response, logging, cache; Filter: xử lý exception.
@@ -136,7 +145,7 @@ Client → LoggerMiddleware (log method/url/ip/time)
 - **Passport strategy là gì?** → Plugin xác thực, `JwtStrategy` validate token và trả user.
 - **Global guard đăng ký ở đâu?** → `APP_GUARD` provider trong `AppModule`.
 
-## 11. Ghi chú học thêm
+## 12. Ghi chú học thêm
 
 - Đọc Nest docs: Modules, Controllers, Providers, Middleware, Guards, Interceptors, Pipes, Exception Filters.
 - File `docs/ARCHITECTURE.md` mục "Luồng Xử Lý Nghiệp Vụ Cốt Lõi" → luồng Auth.
