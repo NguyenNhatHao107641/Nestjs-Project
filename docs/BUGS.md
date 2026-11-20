@@ -8,12 +8,15 @@ Tài liệu theo dõi và quản lý các lỗi kỹ thuật phát sinh trong qu
 
 | ID | Mô tả lỗi | File / Module liên quan | Mức độ | Trạng thái | Hướng giải quyết dự kiến |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **BUG-02** | Giới hạn dung lượng tải ảnh phòng khi upload trực tiếp | `src/modules/rooms/` | Thấp | Chờ xử lý | Tích hợp Multer / Cloudinary / AWS S3 để upload file ảnh thay vì URL tĩnh |
-| **BUG-03** | Khách hàng có thể hủy đơn khi đã cận kề ngày Check-in | `src/modules/bookings/` | Thấp | Nghiên cứu | Bổ sung quy định chính sách hủy: chỉ được hủy trước 24h hoặc 48h |
+| **BUG-03** | Khách hàng có thể hủy đơn khi đã cận kề ngày Check-in | `src/modules/bookings/` | Thấp | Đã xử lý (2026-11-20) | Chính sách hủy: chỉ hủy trước 24h so với check-in (đã implement) |
 
 ---
 
 ## ✅ Nhật Ký Lỗi Đã Khắc Phục (Resolved Bugs)
+
+- **[2026-11-20] BUG-02 - Giới hạn dung lượng tải ảnh phòng khi upload trực tiếp:**
+  - *Mô tả:* Trước đây phòng chỉ nhận URL ảnh tĩnh.
+  - *Cách khắc phục:* Thêm `POST /rooms/:id/images` (multipart, host/admin, tối đa 5MB), lưu vào `public/uploads/rooms/`, append vào `room.images`. Đánh dấu resolved.
 
 - **[2026-11-16] BUG-01 - Lệnh `npm run seed` trỏ nhầm đường dẫn file biên dịch:**
   - *Mô tả:* Lệnh trong `package.json` trỏ tới `dist/src/scripts/seed.js` nhưng Nest CLI khi biên dịch đặt file tại `dist/scripts/seed.js`, dẫn đến lỗi `Cannot find module`.

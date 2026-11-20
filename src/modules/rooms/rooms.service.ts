@@ -35,7 +35,7 @@ export class RoomsService {
     return room.save();
   }
 
-  async findAll(filter: FilterRoomDto): Promise<RoomDocument[]> {
+  async findAll(filter: FilterRoomDto): Promise<any> {
     const query: Record<string, any> = {
       status: RoomStatus.AVAILABLE,
     };
@@ -69,11 +69,52 @@ export class RoomsService {
       ];
     }
 
-    return this.roomModel
+    const usePagination = !!filter.page || !!filter.limit;
+    const page = filter.page && filter.page > 0 ? filter.page : 1;
+    const limit = filter.limit && filter.limit > 0 ? filter.limit : 12;
+
+    const base = this.roomModel
       .find(query)
       .populate('hostId', 'fullName email phoneNumber avatar')
-      .sort({ createdAt: -1 })
-      .exec();
+      .sort({ createdAt: -1 });
+
+    if (!usePagination) {
+      return base.exec();
+    }
+
+    const [items, total] = await Promise.all([
+      base.skip((page - 1) * limit).limit(limit).exec(),
+      this.roomModel.countDocuments(query).exec(),
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1,
+    };
+  }
+
+  /**
+   * Them anh vao phong (URL). Dung cho upload: controller luu file roi goi ham nay.
+   */
+  async addImage(
+    id: Types.ObjectId | string,
+    imageUrl: string,
+    userId?: string,
+    userRole?: string,
+  ): Promise<RoomDocument> {
+    const room = await this.findById(id);
+    const hostId = (room.hostId as { _id?: unknown })?._id ?? room.hostId;
+    if (userRole !== UserRole.ADMIN && (!userId || hostId.toString() !== userId.toString())) {
+      throw new ForbiddenException('Ban khong co quyen them anh cho phong nay');
+    }
+    const images = Array.isArray(room.images) ? room.images.slice() : [];
+    images.push(imageUrl);
+    const updated = await this.roomModel.findByIdAndUpdate(id, { images }, { new: true }).exec();
+    if (!updated) throw new NotFoundException('Khong tim thay phong');
+    return updated;
   }
 
   async findById(id: Types.ObjectId | string): Promise<RoomDocument> {

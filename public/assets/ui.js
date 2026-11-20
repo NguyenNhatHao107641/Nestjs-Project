@@ -127,7 +127,13 @@
           <span class="text-xl font-extrabold tracking-tight text-slate-900">Stay<span class="text-brand-teal">Nest</span></span>
         </a>
         <nav class="hidden items-center gap-7 lg:flex">${nav}</nav>
-        <div class="flex items-center gap-2">${userMenu}</div>
+        <div class="flex items-center gap-2">
+          <button id="darkToggle" type="button" aria-label="Che do toi/sang"
+            class="grid h-9 w-9 place-items-center rounded-full border border-slate-200 text-slate-500 transition-all duration-200 hover:border-brand-teal hover:text-brand-teal dark:border-slate-700 dark:text-slate-300">
+            <span id="darkToggleIcon">🌙</span>
+          </button>
+          ${userMenu}
+        </div>
       </div>`;
   }
 
@@ -152,6 +158,21 @@
         await Auth.logout();
         showToast('Đã đăng xuất. Hẹn gặp lại!');
         setTimeout(() => location.replace('index.html'), 700);
+      });
+    }
+
+    // Dark mode toggle
+    const darkBtn = document.getElementById('darkToggle');
+    const darkIcon = document.getElementById('darkToggleIcon');
+    function syncDarkIcon() {
+      if (darkIcon) darkIcon.textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+    }
+    syncDarkIcon();
+    if (darkBtn) {
+      darkBtn.addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        try { localStorage.setItem('staynest_dark', isDark ? '1' : '0'); } catch (_) {}
+        syncDarkIcon();
       });
     }
   }
@@ -284,6 +305,9 @@
       });
     });
   }
+
+  // Ap dung che do toi da luu
+  try { if (localStorage.getItem('staynest_dark') === '1') document.documentElement.classList.add('dark'); } catch (_) {}
 
   window.UI = {
     esc, fmtVND, fmtDate, initial, showToast,

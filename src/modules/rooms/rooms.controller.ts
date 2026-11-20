@@ -8,7 +8,10 @@ import {
   Delete,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -25,6 +28,10 @@ import { RolesGuard } from '../../common/guards/roles.guard.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe.js';
+import { diskStorage } from 'multer';
+import { mkdirSync } from 'node:fs';
+import { extname, join } from 'node:path';
+import { BadRequestException } from '@nestjs/common';
 import { UserRole } from '../../entities/user.entity.js';
 
 /**
@@ -67,6 +74,46 @@ export class RoomsController {
   @ApiOperation({ summary: 'Xem chi tiết thông tin homestay/phòng' })
   findOne(@Param('id', ParseObjectIdPipe) id: Types.ObjectId) {
     return this.roomsService.findById(id);
+  }
+
+  @Post(':id/images')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.HOST, UserRole.ADMIN)
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const dir = join(process.cwd(), 'public', 'uploads', 'rooms');
+          mkdirSync(dir, { recursive: true });
+          cb(null, dir);
+        },
+        filename: (req, file, cb) => {
+          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, unique + extname(file.originalname));
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+          return cb(new BadRequestException('Chi chap nhan file anh'), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Upload anh cho phong (host/admin), toi da 5MB' })
+  uploadImage(
+    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @CurrentUser('sub') userId: string,
+    @CurrentUser('role') userRole: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('Thieu file anh');
+    // Kiem tra quyen (host cua phong hoac admin)
+    // RoomsService.findById da populate hostId
+    const url = '/uploads/rooms/' + file.filename;
+    return this.roomsService.addImage(id, url, userId, userRole);
   }
 
   @Get(':id/availability')

@@ -90,7 +90,68 @@ Backend **đã có sẵn** check trùng lịch trong `bookings.service.ts` (lầ
 
 ---
 
-## 🗺 Việc đề xuất tiếp theo (chưa làm)
+## 📅 [2026-11-20] Phiên 4 — Sửa Chatbox AI (không chạy)
+
+### Vấn đề gốc
+- `POST /chat` trả `503 "Chưa cấu hình GEMINI_API_KEY"` vì `.env` không có key → chat không chạy được.
+- `chat.js` bị **mojibake** (UTF-8 bị lưu sai codepage) → toàn bộ text tiếng Việt hiển thị ký tự rác.
+- Model mặc định `gemini-3.5-flash-lite` không tồn tại → sẽ 404 ngay cả khi có key.
+- Logic parse ngân sách: từ "khách" bị khớp nhầm thành đơn vị "k" (nghìn) → `maxPrice = 2000đ`, lọc sạch mọi phòng.
+
+### Đã sửa
+- `chat.service.ts`: thêm **chế độ cơ bản (rule-based)** khi không có `GEMINI_API_KEY` — trả lời tiếng Việt từ dữ liệu phòng trong DB, khớp địa điểm/giá/số khách/tiện ích, gợi ý top 3 phòng. Widget luôn chạy được mà không cần key.
+- Model mặc định đổi thành `gemini-2.0-flash` (hợp lệ); vẫn cho phép override qua `GEMINI_MODEL`.
+- Sửa regex parse ngân sách: `(triệu|trien|nghìn|ngàn|tr|k)(?![a-zà-ỹ])` — không còn khớp "khách".
+- `chat.js`: viết lại toàn bộ với UTF-8 chuẩn (text tiếng Việt đúng, emoji 💬).
+- `.env` và `.env.example`: thêm `GEMINI_API_KEY=` (để trống → chế độ cơ bản) + `GEMINI_MODEL=gemini-2.0-flash`, kèm hướng dẫn lấy key tại aistudio.google.com.
+- Verify: `POST /chat` trả `200` với câu trả lời tiếng Việt đúng ngữ cảnh (Đà Lạt/2 khách/<1 triệu → Wilder-Nest 950.000đ); `chat.js` HTTP 200 `text/javascript; charset=utf-8`.
+
+> Muốn bật AI nâng cao: điền `GEMINI_API_KEY` vào `.env` rồi restart server (`npm run start:dev` watch mode tự rebuild).
+
+## 📅 [2026-11-20] Phiên 5 — Triển khai các tính năng đề xuất còn lại
+
+Đã triển khai **7 tính năng** còn trong danh sách "Việc đề xuất tiếp theo", đồng thời sửa lỗi app.module bị mất imports feature modules.
+
+### 1. Chính sách hủy (Cancellation Policy)
+- `bookings.service.ts` `updateStatus`: khách chỉ được hủy **trước 24 giờ** so với ngày nhận phòng; đơn đã `completed/cancelled` không đổi trạng thái; nếu hủy đơn đã thanh toán → tự động `paymentStatus = refunded`.
+
+### 2. Phân trang (Pagination)
+- `FilterRoomDto`: thêm `page`, `limit`.
+- `RoomsService.findAll`: khi có `page/limit` trả `{ items, total, page, limit, totalPages }`; không có → trả mảng (backward compat, frontend cũ không vỡ).
+- `GET /rooms?page=1&limit=12`.
+
+### 3. Upload ảnh phòng
+- `POST /rooms/:id/images` (multipart, host/admin, tối đa 5MB, chỉ image/*), lưu vào `public/uploads/rooms/`, append URL vào `room.images`.
+- Kiểm tra quyền chủ phòng/admin trong service.
+
+### 4. Email (SMTP, best-effort)
+- Dùng `nodemailer` trực tiếp (tránh vấn đề export của `@nestjs/mail`); chỉ gửi khi cấu hình `SMTP_HOST`; nếu không, ghi log `[email:skip]` và không làm fail request.
+- Gửi email xác nhận khi đặt phòng và biên lai khi thanh toán.
+- Env: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
+
+### 5. Job định kỳ (Cron)
+- `TasksModule` + `TasksService` với `@Cron(EVERY_DAY_AT_MIDNIGHT)`: tự động chuyển đơn `confirmed` đã quá hạn checkout → `completed` (qua `BookingsService.autoCompleteExpired()`).
+
+### 6. Thanh toán (giả lập)
+- `POST /bookings/:id/pay` (customer/admin): đánh dấu `paymentStatus = paid`, gửi biên lai email.
+- `PATCH /bookings/:id/refund` (admin): đánh dấu `refunded`.
+- Hủy đơn đã thanh toán → tự hoàn tiền.
+
+### 7. Dark mode
+- Tailwind `darkMode: 'class'` trên 8 trang; class `dark:bg-slate-900 dark:text-slate-100` trên body.
+- Nút 🌙/☀️ trong header (`ui.js`), lưu `localStorage.staynest_dark`, áp dụng khi tải trang (persist qua reload).
+
+### Bug phát hiện & sửa
+- `app.module.ts`: khi thêm ScheduleModule, **vô tình xóa toàn bộ feature modules** khỏi `imports` → server chỉ đăng ký `AppController` (mọi API trả 404). Đã khôi phục: UsersModule, AuthModule, RoomsModule, BookingsModule, ReviewsModule, FavoritesModule, TasksModule, ChatModule, AppGraphQLModule.
+- `@nestjs/mail` export `MailerModule` không tồn tại (đúng là `MailModule`) và `transport` phải là instance `MailTransport` → chuyển sang `nodemailer` trực tiếp để tránh lỗi DI.
+
+### Kết quả kiểm thử
+- Unit 1/1 + E2E 2/2 pass.
+- `GET /rooms?page=1&limit=1` → `{ total, page, items }` ✅
+- `POST /bookings/:id/pay` → `paymentStatus: paid` ✅
+- `POST /rooms/:id/images` (không file) → `400 "Thiếu file ảnh"` (route hoạt động) ✅
+- Dark mode toggle persist qua reload ✅
+- `npm run build` thành công.
 
 1. **Thanh toán** — Stripe/Momo/VNPay webhook (`@nestjs/webhooks`), workflow nhiều ngày (`@nestjs/workflows`).
 2. **Upload ảnh phòng thật** — `@nestjs/storage` (S3/local) thay vì URL Unsplash; liên quan BUG-02.
@@ -99,3 +160,10 @@ Backend **đã có sẵn** check trùng lịch trong `bookings.service.ts` (lầ
 5. **Phân trang** danh sách phòng + admin; sắp xếp theo giá/đánh giá.
 6. **Job định kỳ** — tự complete booking quá hạn (`@nestjs/schedule`).
 7. **Dark mode / i18n** cho frontend.
+
+
+## 📅 [2026-11-20] Phiên 6 — Chatbox: tự động đổi model khi quá tải / không khả dụng
+
+- `chat.service.ts`: thêm **fallback chain** model — thử model chính (env `GEMINI_MODEL`, mặc định `gemini-2.0-flash`) → `gemini-2.0-flash` → `gemini-2.0-flash-lite` → `gemini-1.5-flash`. Nếu model bị quá tải / 404 / 429 / 5xx → tự chuyển model tiếp theo (retry 2 lần mỗi model).
+- Nếu **tất cả model đều thất bại** → không còn trả 503 nữa, mà **fallback sang chế độ cơ bản** (rule-based từ DB) kèm ghi chú "AI Gemini đang quá tải/không khả dụng". Chat luôn trả lời 200.
+- Verify: đặt `GEMINI_MODEL=gemini-3.8-nonexistent` → chat vẫn trả 200 với câu trả lời từ dữ liệu phòng.

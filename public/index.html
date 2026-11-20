@@ -12,7 +12,7 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
+    tailwind.config = { darkMode: "class",
       theme: {
         extend: {
           colors: {
@@ -51,7 +51,7 @@
   </style>
 </head>
 
-<body class="bg-slate-50 font-sans text-slate-800 antialiased">
+<body class="bg-slate-50 font-sans text-slate-800 antialiased dark:bg-slate-900 dark:text-slate-100">
 
   <!-- Header được vẽ bởi ui.js theo vai trò người dùng -->
   <div id="appHeader" class="sticky top-0 z-40 w-full border-b border-slate-100 bg-white/85 backdrop-blur-md"></div>

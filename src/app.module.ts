@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config/configuration.js';
@@ -20,6 +21,7 @@ import { RoomsModule } from './modules/rooms/rooms.module.js';
 import { BookingsModule } from './modules/bookings/bookings.module.js';
 import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { FavoritesModule } from './modules/favorites/favorites.module.js';
+import { TasksModule } from './modules/tasks/tasks.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
 import { AppGraphQLModule } from './modules/graphql/app-graphql.module.js';
 
@@ -52,16 +54,21 @@ import { AppGraphQLModule } from './modules/graphql/app-graphql.module.js';
       { name: 'default', ttl: 60_000, limit: 120 },
     ]),
 
-    // Các module nghiệp vụ
+    // Lịch định kỳ (cron): tự complete booking quá hạn, nhắc nhở...
+    ScheduleModule.forRoot(),
+
+    // Cac module nghiep vu
     UsersModule,
     AuthModule,
     RoomsModule,
     BookingsModule,
     ReviewsModule,
     FavoritesModule,
+    TasksModule,
     ChatModule,
     AppGraphQLModule,
   ],
+
   controllers: [AppController],
   providers: [
     AppService,

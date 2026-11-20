@@ -1,7 +1,7 @@
 /**
  * chat.js — Widget chat AI tư vấn homestay (StayNest)
  * - Nút nổi góc phải dưới, mở panel chat.
- * - Gọi POST /chat, gửi lịch sử hội thoại.
+ * - Gọi POST /chat, lưu lịch sử hội thoại.
  * - Không yêu cầu đăng nhập.
  */
 (function () {
@@ -51,12 +51,12 @@
   panel.id = 'sn-chat-panel';
   panel.innerHTML = `
     <div id="sn-chat-header">
-      <h4>🤖 Trợ lý Homestay</h4>
+      <h4>💬 Trợ lý Homestay</h4>
       <button id="sn-chat-close" aria-label="Đóng">×</button>
     </div>
     <div id="sn-chat-messages"></div>
     <div id="sn-chat-inputrow">
-      <input id="sn-chat-input" type="text" placeholder="Hỏi về phòng, giá, địa điểm..." maxlength="2000" />
+      <input id="sn-chat-input" type="text" placeholder="Hỏi về phòng, giá, địa điểm hay số khách..." maxlength="2000" />
       <button id="sn-chat-send">Gửi</button>
     </div>
   `;
@@ -81,7 +81,7 @@
 
   // Render history
   if (history.length === 0) {
-    addMsg('bot', 'Xin chào! 👋 Tôi là trợ lý Homestay. Hãy hỏi tôi về phòng, giá, địa điểm hoặc số khách nhé.');
+    addMsg('bot', 'Xin chào! 👋 Tôi là trợ lý Homestay. Hãy hỏi tôi về phòng, giá, địa điểm hay số khách nhé.');
   } else {
     history.forEach((h) => addMsg(h.role, h.content));
   }

@@ -11,7 +11,8 @@ export class RoomResolver {
 
   @Query(() => [RoomGqlType], { name: 'getRooms', description: 'Lấy tất cả các phòng homestay' })
   async getRooms(): Promise<RoomGqlType[]> {
-    const rooms = await this.roomsService.findAll({});
+    const result = await this.roomsService.findAll({});
+    const rooms: any[] = Array.isArray(result) ? result : (result as any).items || [];
     return rooms.map((r) => this.mapToGql(r));
   }
 

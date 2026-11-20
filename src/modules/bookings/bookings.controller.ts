@@ -85,4 +85,25 @@ export class BookingsController {
   ) {
     return this.bookingsService.updateStatus(id, userId, userRole, updateDto);
   }
+
+
+  @Patch(':id/pay')
+  @ApiOperation({ summary: 'Thanh toán đơn đặt phòng (giả lập) — đánh dấu đã thanh toán' })
+  @ApiBearerAuth('access-token')
+  pay(
+    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @CurrentUser('sub') userId: string,
+    @CurrentUser('role') userRole: string,
+  ) {
+    return this.bookingsService.pay(id, userId, userRole);
+  }
+
+  @Patch(':id/refund')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Hoàn tiền cho đơn đã thanh toán (chỉ Admin)' })
+  @ApiBearerAuth('access-token')
+  refund(@Param('id', ParseObjectIdPipe) id: Types.ObjectId) {
+    return this.bookingsService.refund(id);
+  }
 }
